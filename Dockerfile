@@ -1,4 +1,4 @@
-FROM php:8.3-fpm-alpine
+FROM php:8.2-fpm-alpine
 
 # Install dependencies
 RUN apk --no-cache add curl git wget bash dpkg
@@ -8,9 +8,7 @@ ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/do
 RUN chmod +x /usr/local/bin/install-php-extensions && \
   install-php-extensions iconv zip intl opcache zip soap gd apcu redis pdo pdo_mysql pdo_pgsql xdebug 
   
-# Add PHP extension imagick
-#TODO
-
+RUN docker-php-ext-enable xdebug
 
 # Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ --filename=composer
@@ -30,5 +28,14 @@ RUN apk --no-cache add ffmpeg
 
 # Xdebug (disabled by default, but installed if required)
 ADD php.ini /usr/local/etc/php/conf.d/
+
+# Set up Xdebug configuration
+RUN echo "zend_extension=$(find /usr/local/lib/php/extensions/ -name xdebug.so)" > /usr/local/etc/php/conf.d/xdebug.ini \
+    && echo "xdebug.mode=debug" >> /usr/local/etc/php/conf.d/xdebug.ini \
+    && echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/xdebug.ini \
+    && echo "xdebug.client_host=host.docker.internal" >> /usr/local/etc/php/conf.d/xdebug.ini \
+    && echo "xdebug.client_port=9003" >> /usr/local/etc/php/conf.d/xdebug.ini \
+    && echo "xdebug.idekey=VSCODE" >> /usr/local/etc/php/conf.d/xdebug.ini
+
 
 WORKDIR /var/www
